@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Chronical</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#ff0000">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
       body {
@@ -59,6 +61,7 @@
         width: clamp(220px, 60vw, 320px);
         height: clamp(240px, 70vw, 420px);
         margin: auto;
+        will-change: transform;
       }
 
       .carousel-item {
@@ -315,6 +318,13 @@
 
         setTimeout(() => form.submit(), 5100);
       });
+    </script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(() => console.log("SW Registered"));
+      }
     </script>
   </body>
 </html>
