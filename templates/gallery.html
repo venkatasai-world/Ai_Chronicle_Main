@@ -309,6 +309,53 @@
             background: #666;
         }
 
+        /* Fresh Feed Notification */
+        .feed-notification {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0,255,100,0.9), rgba(0,200,100,0.9));
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            z-index: 999;
+            animation: slideDown 0.5s ease-out;
+            box-shadow: 0 10px 30px rgba(0,255,100,0.3);
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+
+        .feed-notification.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Loading skeleton */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .skeleton-reel {
+            animation: shimmer 2s infinite;
+            background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            background-size: 1000px 100%;
+            height: 100vh;
+            border-radius: 0;
+        }
+
         /* Empty State */
         .empty-state {
             display: flex;
@@ -508,6 +555,9 @@
         <p>AI-Powered News Stories</p>
     </header>
 
+    <!-- Fresh Feed Notification -->
+    <div id="feedNotification" class="feed-notification"></div>
+
     <!-- Main Gallery -->
     <div class="gallery-wrapper">
         <div class="reelsContainer" id="reelsContainer">
@@ -538,6 +588,16 @@
         const rss_url = "{{ rss_url }}";
         let totalProcessedCount = {{ processed_count }};
         console.log('totalProcessedCount on load:', totalProcessedCount);
+
+        // Notification System
+        function showFeedNotification(message, duration = 3000) {
+            const notification = document.getElementById('feedNotification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
 
         // Clear empty state when first image loads
         function clearEmptyState() {
@@ -603,6 +663,7 @@
         function loadMoreImages() {
             loadMoreButton.textContent = '⏳ Loading...';
             loadMoreButton.disabled = true;
+            showFeedNotification('🔄 Fetching fresh stories...', 5000);
             
             fetch(`/load_more_images?rss_url=${encodeURIComponent(rss_url)}`)
                 .then(response => response.json())
@@ -612,6 +673,9 @@
                         imageFiles = imageFiles.concat(data.image_files);
                         totalProcessedCount = data.processed_count;
                         loadImagesToGallery(imagesPerLoadMore);
+                        showFeedNotification('✨ Fresh Feed Updated! Non-duplicate stories loaded.', 3000);
+                    } else {
+                        showFeedNotification('No more fresh stories available.', 2000);
                     }
                     loadMoreButton.textContent = '📥 Load More Stories';
                     loadMoreButton.disabled = false;
@@ -619,6 +683,7 @@
                 })
                 .catch(error => {
                     console.error("Error loading more images:", error);
+                    showFeedNotification('⚠️ Failed to load more stories.', 2000);
                     loadMoreButton.textContent = '📥 Load More Stories';
                     loadMoreButton.disabled = false;
                 });
@@ -762,6 +827,9 @@
         // Initial observe after page load
         window.addEventListener('load', () => {
             setTimeout(observeReels, 500);
+            setTimeout(() => {
+                showFeedNotification('🎬 Fresh Feed Ready - All duplicates filtered out!', 3000);
+            }, 1000);
         });
     </script>
 

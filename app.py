@@ -4,6 +4,7 @@ import json
 import feedparser
 import random
 import re
+import hashlib
 from pathlib import Path
 from PIL import Image
 from bing_image_downloader import downloader
@@ -13,6 +14,7 @@ import urllib.parse  # For URL-encoding the prompt
 import edge_tts
 import asyncio # edge-tts is async
 from groq import Groq
+from difflib import SequenceMatcher
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -24,6 +26,74 @@ PORT = int(os.environ.get('PORT', 5000))
 output_dir = Path("images")
 output_dir.mkdir(parents=True, exist_ok=True)
 os.makedirs('static/images', exist_ok=True)
+os.makedirs('data', exist_ok=True)
+
+# CACHE SYSTEM FOR DUPLICATE PREVENTION
+CACHE_FILE = 'data/articles_cache.json'
+VIEWED_ARTICLES_FILE = 'data/viewed_articles.json'
+
+def load_cache(file_path):
+    """Load cache from JSON file"""
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_cache(file_path, data):
+    """Save cache to JSON file"""
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[ERROR] Failed to save cache: {e}")
+
+def get_article_hash(title, description):
+    """Generate hash for article deduplication"""
+    combined = f"{title}||{description}".lower().strip()
+    return hashlib.md5(combined.encode()).hexdigest()
+
+def is_similar(text1, text2, threshold=0.75):
+    """Check if two texts are similar (for near-duplicate detection)"""
+    similarity = SequenceMatcher(None, text1.lower(), text2.lower()).ratio()
+    return similarity >= threshold
+
+def is_duplicate_article(title, description, url):
+    """Check if article is a duplicate"""
+    cache = load_cache(CACHE_FILE)
+    article_hash = get_article_hash(title, description)
+    
+    # Check exact hash match
+    if article_hash in cache:
+        print(f"[DUPLICATE] Exact duplicate found: {title[:50]}")
+        return True
+    
+    # Check URL match
+    if any(cached['url'] == url for cached in cache.values() if cached.get('url')):
+        print(f"[DUPLICATE] URL already processed: {url}")
+        return True
+    
+    # Check similar titles (near-duplicate)
+    for cached_article in cache.values():
+        if is_similar(cached_article.get('title', ''), title):
+            print(f"[DUPLICATE] Similar article found: {title[:50]}")
+            return True
+    
+    return False
+
+def add_to_cache(title, description, url):
+    """Add article to cache"""
+    cache = load_cache(CACHE_FILE)
+    article_hash = get_article_hash(title, description)
+    cache[article_hash] = {
+        'title': title,
+        'description': description,
+        'url': url,
+        'timestamp': str(__import__('datetime').datetime.now())
+    }
+    save_cache(CACHE_FILE, cache)
 
 # Track processed keywords to avoid repetition
 processed_keywords = set()
@@ -163,10 +233,11 @@ def create_audio(text, filename):
 # RSS Processing Function
 # =============================================================================
 def process_rss_entries(rss_url, start_entry_index=0, num_entries=3):
-    """Enhanced RSS processing with better validation and pagination"""
+    """Enhanced RSS processing with duplicate prevention, quality filtering, and freshness"""
     print(f"\n[RSS] Processing RSS feed: {rss_url} from entry {start_entry_index}, count {num_entries}")
     generated_files = []
     processed_count = 0
+    
     try:
         print("[FETCH] Fetching RSS entries...")
         feed = feedparser.parse(rss_url)
@@ -182,33 +253,64 @@ def process_rss_entries(rss_url, start_entry_index=0, num_entries=3):
             print("[DONE] No more entries to process.")
             return generated_files, processed_count
 
-
-        end_entry_index = min(start_entry_index + num_entries, total_entries)
-        entries_to_process = entries[start_entry_index:end_entry_index]
+        # FILTER: Remove low-quality entries
+        filtered_entries = []
+        for entry in entries:
+            title = entry.get('title', '').strip()
+            description = entry.get('description', '').strip()
+            url = entry.get('link', '')
+            
+            # Quality checks
+            if not title or len(title) < 10:
+                print(f"[FILTER] Skipping: Title too short")
+                continue
+            
+            if not description or len(description) < 20:
+                print(f"[FILTER] Skipping: Description too short")
+                continue
+            
+            # Spam detection
+            spam_patterns = ['click here', 'advertisement', 'sponsored', 'buy now', 'limited time']
+            if any(pattern in title.lower() or pattern in description.lower() for pattern in spam_patterns):
+                print(f"[FILTER] Skipping: Spam detected")
+                continue
+            
+            # DUPLICATE CHECK
+            if is_duplicate_article(title, description, url):
+                continue
+            
+            filtered_entries.append((entry, url))
+        
+        print(f"[FILTER] After quality filtering: {len(filtered_entries)} entries remaining")
+        
+        if not filtered_entries:
+            print("[DONE] No high-quality entries available.")
+            return generated_files, processed_count
+        
+        # Shuffle for freshness (show different stories each time)
+        random.shuffle(filtered_entries)
+        
+        end_entry_index = min(start_entry_index + num_entries, len(filtered_entries))
+        entries_to_process = filtered_entries[start_entry_index:end_entry_index]
 
         print(f"Processing entries {start_entry_index + 1} to {end_entry_index} ({len(entries_to_process)} entries)")
 
-
-        file_index_start = start_entry_index + 1 # Filename index start
-        for i, entry in enumerate(entries_to_process):
+        file_index_start = start_entry_index + 1
+        for i, (entry, url) in enumerate(entries_to_process):
             current_file_index = file_index_start + i
 
-            print(f"\n[ENTRY] Processing entry {current_file_index}/{total_entries}")
+            print(f"\n[ENTRY] Processing entry {current_file_index}")
             title = entry.get('title', '').strip()
             description = entry.get('description', '').strip()
-
-            if not title and not description:
-                print("[SKIP] Skipping empty entry")
-                continue
 
             print(f"[TITLE] Title: {title[:50]}...")
             print(f"[DESC] Description: {description[:50]}...")
 
-
+            # Enhanced prompt for better summaries
             prompt = (
                 "Generate valid JSON with exactly two keys:\n"
                 "- \"text\": One short factual sentence about what happened. 18 words or fewer. "
-                "Do NOT explain why, just what. No ellipses. No trailing dot at the end.\n"
+                "Use modern, engaging language. Avoid robotic tone. No ellipses. No trailing dot.\n"
                 "- \"keyword\": A single term (maximum two words) related to the text, including a person's name if mentioned.\n\n"
                 "News:\n"
                 f"Title: {title}\n"
@@ -219,7 +321,6 @@ def process_rss_entries(rss_url, start_entry_index=0, num_entries=3):
             output = get_deepseek_response(prompt)
             if not output:
                 print("[WARNING] API returned None, using fallback data...")
-                # Fallback: create summary from title/description
                 result = {
                     'text': title[:100] if title else description[:100],
                     'keyword': title.split()[0] if title else 'News'
@@ -249,23 +350,15 @@ def process_rss_entries(rss_url, start_entry_index=0, num_entries=3):
                         'keyword': title.split()[0] if title else 'News'
                     }
 
-            # Normalise and clean summary text: short, factual, no extra dots or ellipses
+            # Normalize and clean summary text
             summary_text = str(result.get('text', '')).strip()
             if summary_text:
-                # Remove ellipses anywhere
                 summary_text = summary_text.replace('...', ' ')
-                # Remove any trailing dots (one or many)
                 summary_text = re.sub(r'\s*\.+\s*$', '', summary_text).strip()
             result['text'] = summary_text
 
-            
             try:
                 keyword = result['keyword']
-                if keyword in processed_keywords:
-                    print(f"[DUPLICATE] Keyword '{keyword}' already processed. Skipping to avoid repetition.")
-                    continue
-
-                processed_keywords.add(keyword)
                 print(f"[SUMMARY] Summary: {result['text']}")
                 print(f"[KEYWORD] Keyword: {keyword}")
 
@@ -275,7 +368,10 @@ def process_rss_entries(rss_url, start_entry_index=0, num_entries=3):
                 create_news_image(result['text'], keyword, image_filename)
                 create_audio(result['text'], audio_filename)
 
-                # Store both filename and text for display in gallery
+                # Add to cache to prevent future duplicates
+                add_to_cache(title, description, url)
+
+                # Store filename and text
                 generated_files.append({
                     'filename': image_filename,
                     'text': result['text']
@@ -305,30 +401,33 @@ def process_feed():
     selected_url = rss_feeds[selected_index]['url']
     print(f"[PROCESS] Selected feed index {selected_index}, URL: {selected_url}")
     
-    processed_keywords.clear()
     feed_entry_counts[selected_url] = 0 # Initialize entry count
 
-    # Clear previous images and audios
-    print("[PROCESS] Clearing previous images...")
+    # Clear only old images (keep static ones)
+    print("[PROCESS] Clearing old news images...")
     cleared_count = 0
-    for f in Path('static/images').glob('*.*'):
+    for f in Path('static/images').glob('news_summary_*.jpg'):
         print(f"[PROCESS] Deleting: {f}")
         f.unlink()
         cleared_count += 1
-    print(f"[PROCESS] Cleared {cleared_count} files")
+    for f in Path('static/images').glob('news_summary_*.mp3'):
+        print(f"[PROCESS] Deleting: {f}")
+        f.unlink()
+        cleared_count += 1
+    print(f"[PROCESS] Cleared {cleared_count} old files")
 
     print("[PROCESS] Processing RSS entries...")
-    initial_image_files, processed_count_initial = process_rss_entries(selected_url, start_entry_index=0, num_entries=3) # Initial 3
-    feed_entry_counts[selected_url] += processed_count_initial # Update count
+    initial_image_files, processed_count_initial = process_rss_entries(selected_url, start_entry_index=0, num_entries=3)
+    feed_entry_counts[selected_url] += processed_count_initial
     
     print(f"[PROCESS] Generated {len(initial_image_files)} images: {initial_image_files}")
     print(f"[PROCESS] Processed count: {processed_count_initial}")
     print(f"[PROCESS] Feed entry counts: {feed_entry_counts}")
 
-    all_image_files = initial_image_files # Only send initial 3 to gallery
+    all_image_files = initial_image_files
 
     print(f"[PROCESS] Redirecting to gallery with {len(all_image_files)} images...")
-    return redirect(url_for('gallery', image_files=json.dumps(all_image_files), rss_url=selected_url, processed_count=feed_entry_counts[selected_url])) # Pass filenames and rss_url
+    return redirect(url_for('gallery', image_files=json.dumps(all_image_files), rss_url=selected_url, processed_count=feed_entry_counts[selected_url]))
 
 @app.route('/load_more_images')
 def load_more_images():
@@ -337,10 +436,21 @@ def load_more_images():
         return jsonify({"error": "RSS URL is missing"}), 400
 
     start_index = feed_entry_counts.get(rss_url, 0)
-    generated_image_files, processed_count = process_rss_entries(rss_url, start_entry_index=start_index, num_entries=3) # Load next 3
-    feed_entry_counts[rss_url] += processed_count # Update count
+    generated_image_files, processed_count = process_rss_entries(rss_url, start_entry_index=start_index, num_entries=3)
+    feed_entry_counts[rss_url] += processed_count
 
     return jsonify({"image_files": generated_image_files, "processed_count": feed_entry_counts[rss_url]})
+
+@app.route('/api/cache_stats')
+def cache_stats():
+    """Return statistics about cached articles"""
+    cache = load_cache(CACHE_FILE)
+    viewed = load_cache(VIEWED_ARTICLES_FILE)
+    return jsonify({
+        "cached_articles": len(cache),
+        "viewed_articles": len(viewed),
+        "cache_enabled": True
+    })
 
 
 @app.route('/gallery')
