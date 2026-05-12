@@ -7,6 +7,7 @@
     <title>News Gallery - AI Chronical</title>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#ff0000">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         * {
@@ -20,7 +21,7 @@
             height: 100%;
             background: #000;
             color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             overflow-x: hidden;
         }
 
@@ -31,12 +32,11 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            background: linear-gradient(180deg, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.85) 100%);
-            padding: clamp(0.75rem, 3vw, 1.2rem) clamp(1rem, 5vw, 2rem);
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 100%);
+            padding: clamp(0.5rem, 2vw, 0.8rem) clamp(1rem, 5vw, 2rem);
             text-align: center;
-            border-bottom: 2px solid rgba(255,255,255,0.15);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         .gallery-header h1 {
@@ -65,14 +65,14 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             padding: 0;
-            margin-top: 60px;
+            margin: 0;
         }
 
         /* Reels Container */
         .reelsContainer {
-            height: calc(100vh - 120px);
+            height: 100vh;
             width: clamp(280px, 90vw, 450px);
             display: flex;
             flex-direction: column;
@@ -80,8 +80,8 @@
             overflow-x: hidden;
             scroll-snap-type: y mandatory;
             scroll-behavior: smooth;
-            gap: 1rem;
-            padding: 1rem 0;
+            gap: 0;
+            padding: 0;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -92,7 +92,7 @@
 
         /* Reel Item */
         .reel {
-            min-height: calc(100vh - 140px);
+            height: 100vh;
             width: 100%;
             background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
             scroll-snap-align: start;
@@ -101,9 +101,9 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            border-radius: 16px;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            box-shadow: none;
             animation: slideUp 0.5s ease-out;
         }
 
@@ -113,8 +113,64 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 16px;
+            border-radius: 0;
             will-change: transform;
+            animation: zoom 15s linear infinite;
+        }
+
+        @keyframes zoom {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.2);
+            z-index: 30;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6666);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Floating Controls */
+        .floating-controls {
+            position: absolute;
+            right: 16px;
+            bottom: 120px;
+            z-index: 35;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
         }
 
         /* Text Overlay on Image */
@@ -124,16 +180,17 @@
             left: 0;
             right: 0;
             z-index: 25;
-            background: linear-gradient(180deg, 
-                rgba(0,0,0,0) 0%,
-                rgba(0,0,0,0.3) 30%,
-                rgba(0,0,0,0.7) 60%,
-                rgba(0,0,0,0.95) 100%
+            background: linear-gradient(
+                to top,
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.8) 30%,
+                rgba(0,0,0,0.4) 60%,
+                rgba(0,0,0,0.1) 100%
             );
-            padding: clamp(1.2rem, 6vw, 3rem);
+            padding: clamp(1.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem);
             color: white;
             text-align: center;
-            min-height: clamp(80px, 25vw, 150px);
+            min-height: clamp(120px, 30vw, 200px);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -494,10 +551,53 @@
             if (audioPlaying) {
                 audioPlaying.pause();
                 audioPlaying.currentTime = 0;
+                resetProgress(audioPlaying.dataset.filename);
             }
             let audioSrc = `static/images/${filename}.mp3`;
             audioPlaying = new Audio(audioSrc);
+            audioPlaying.dataset.filename = filename;
+            audioPlaying.addEventListener('timeupdate', updateProgress);
+            audioPlaying.addEventListener('ended', () => {
+                resetProgress(filename);
+                audioPlaying = null;
+            });
             audioPlaying.play().catch(err => console.error('Audio play error:', err));
+            
+            // Update play button
+            updatePlayButtons(filename);
+        }
+
+        function pauseCurrentAudio() {
+            if (audioPlaying) {
+                audioPlaying.pause();
+                resetProgress(audioPlaying.dataset.filename);
+                audioPlaying = null;
+                updatePlayButtons(null);
+            }
+        }
+
+        function updateProgress() {
+            if (audioPlaying) {
+                const progress = (audioPlaying.currentTime / audioPlaying.duration) * 100;
+                const progressFill = document.getElementById(`progress-${audioPlaying.dataset.filename}`);
+                if (progressFill) {
+                    progressFill.style.width = `${progress}%`;
+                }
+            }
+        }
+
+        function resetProgress(filename) {
+            const progressFill = document.getElementById(`progress-${filename}`);
+            if (progressFill) {
+                progressFill.style.width = '0%';
+            }
+        }
+
+        function updatePlayButtons(playingFilename) {
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                const audioFile = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                btn.textContent = audioFile === playingFilename ? '⏸' : '▶';
+            });
         }
 
         function loadMoreImages() {
@@ -555,12 +655,20 @@
                     const safeText = text.replace(/"/g, '&quot;');
                     
                     reelDiv.innerHTML = `
-                        <button class="play-icon" onclick="playAudio('${audioFile}')">▶</button>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-${audioFile}"></div>
+                        </div>
                         <img src="{{ url_for('static', filename='images/') }}${filename}" 
                              alt="News Summary" 
                              class="reel-image"
                              loading="lazy">
+                        <div class="floating-controls">
+                            <button class="control-btn play-btn" onclick="playAudio('${audioFile}')">▶</button>
+                            <button class="control-btn" onclick="toggleLike('${audioFile}')">❤️</button>
+                            <button class="control-btn" onclick="shareStory('${audioFile}')">↗</button>
+                        </div>
                         <div class="reel-text-overlay">
+                            <h2>AI News Summary</h2>
                             <p>${safeText}</p>
                         </div>
                     `;
@@ -572,6 +680,39 @@
                 }
             }
             updateLoadMoreButtonVisibility();
+            observeReels(); // Observe new reels
+        }
+
+        // IntersectionObserver for auto play/pause
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const reel = entry.target;
+                const playBtn = reel.querySelector('.play-btn');
+                if (!playBtn) return;
+                const audioFile = playBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                
+                if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
+                    // Auto play when 70% visible
+                    if (!audioPlaying || audioPlaying.dataset.filename !== audioFile) {
+                        playAudio(audioFile);
+                    }
+                } else {
+                    // Pause when not visible
+                    if (audioPlaying && audioPlaying.dataset.filename === audioFile) {
+                        pauseCurrentAudio();
+                    }
+                }
+            });
+        }, {
+            threshold: 0.7,
+            rootMargin: '0px'
+        });
+
+        // Observe all reels
+        function observeReels() {
+            document.querySelectorAll('.reel').forEach(reel => {
+                observer.observe(reel);
+            });
         }
 
         function updateLoadMoreButtonVisibility() {
@@ -586,33 +727,41 @@
             }
         }
 
-        // Initial load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded event fired');
-            console.log('Raw imageFiles:', imageFiles);
-            console.log('imageFiles type:', typeof imageFiles);
-            console.log('imageFiles.length:', imageFiles.length);
-            console.log('First item:', imageFiles[0]);
-            
-            // Ensure button text is correct
-            loadMoreButton.textContent = '📥 Load More Stories';
-            loadMoreButton.disabled = false;
-            
-            if (imageFiles && imageFiles.length > 0) {
-                loadImagesToGallery(imagesPerLoadInitial);
-            } else {
-                console.log('No images to load');
-            }
-            
-            // Safety timeout to reset button if stuck
-            setTimeout(() => {
-                if (loadMoreButton.textContent === '⏳ Loading...') {
-                    console.warn('Button stuck in loading state, resetting...');
-                    loadMoreButton.textContent = '📥 Load More Stories';
-                    loadMoreButton.disabled = false;
+        // IntersectionObserver for auto play/pause
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const reel = entry.target;
+                const playBtn = reel.querySelector('.play-btn');
+                if (!playBtn) return;
+                const audioFile = playBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                
+                if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
+                    // Auto play when 70% visible
+                    if (!audioPlaying || audioPlaying.dataset.filename !== audioFile) {
+                        playAudio(audioFile);
+                    }
+                } else {
+                    // Pause when not visible
+                    if (audioPlaying && audioPlaying.dataset.filename === audioFile) {
+                        pauseCurrentAudio();
+                    }
                 }
-                updateLoadMoreButtonVisibility();
-            }, 3000);
+            });
+        }, {
+            threshold: 0.7,
+            rootMargin: '0px'
+        });
+
+        // Observe all reels
+        function observeReels() {
+            document.querySelectorAll('.reel').forEach(reel => {
+                observer.observe(reel);
+            });
+        }
+
+        // Initial observe after page load
+        window.addEventListener('load', () => {
+            setTimeout(observeReels, 500);
         });
     </script>
 
