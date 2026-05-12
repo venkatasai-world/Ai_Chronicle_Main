@@ -103,7 +103,7 @@ rss_feeds = [
     {"name": "International News", "url": "https://www.thehindu.com/news/international/feeder/default.rss"},
     {"name": "Entertainment", "url": "https://www.thehindu.com/entertainment/movies/feeder/default.rss"},
     {"name": "Education", "url": "https://feeds.bbci.co.uk/news/education/rss.xml"},
-    {"name": "Sports", "url": "https://timesofindia.indiatimes.com/rssfeeds/913168846.cms"},
+    {"name": "Sports", "url": "https://www.thehindu.com/sport/feeder/default.rss"},
     {"name": "Science", "url": "https://moxie.foxnews.com/google-publisher/science.xml"},
     {"name": "Business", "url": "https://www.thehindu.com/business/Economy/feeder/default.rss"}
 ]
