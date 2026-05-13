@@ -72,18 +72,20 @@
 
         /* Reels Container */
         .reelsContainer {
-            height: calc(100vh - 6.5rem);
+            height: calc(100vh - 5.5rem);
             width: clamp(280px, 90vw, 450px);
             display: flex;
             flex-direction: column;
             overflow-y: scroll;
             overflow-x: hidden;
             scroll-snap-type: y mandatory;
+            scroll-padding-top: 1rem;
             scroll-behavior: smooth;
             gap: 0;
             padding: 0;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            overscroll-behavior: contain;
         }
 
         .reelsContainer::-webkit-scrollbar {
@@ -92,7 +94,7 @@
 
         /* Reel Item */
         .reel {
-            height: 100vh;
+            height: calc(100vh - 5.5rem);
             width: 100%;
             background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
             scroll-snap-align: start;
@@ -268,30 +270,35 @@
         /* Load More Container */
         .load-more-container {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 50;
-            width: 100%;
-            padding: 1.5rem;
-            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-            text-align: center;
+            width: auto;
+            padding: 0;
             display: flex;
             justify-content: center;
+            align-items: center;
         }
 
         .load-more-button {
-            padding: clamp(10px, 2.5vw, 14px) clamp(20px, 5vw, 32px);
+            padding: clamp(12px, 2.5vw, 16px) clamp(24px, 5vw, 36px);
             border-radius: 12px;
-            background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
-            color: #000;
+            background: linear-gradient(135deg, #5b7cfa 0%, #4c63d2 100%);
+            color: #fff;
             font-weight: 700;
             font-size: clamp(0.9rem, 2vw, 1rem);
             cursor: pointer;
             border: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 24px rgba(255,255,255,0.15);
+            box-shadow: 0 8px 24px rgba(91, 124, 250, 0.3);
             letter-spacing: 0.5px;
+        }
+
+        .load-more-button::before {
+            content: '⬇';
+            margin-right: 0.6rem;
+            display: inline-block;
         }
 
         .load-more-button:hover:not(:disabled) {
@@ -432,7 +439,7 @@
                 height: calc(100vh - 110px);
                 width: 95vw;
                 max-width: 450px;
-                gap: 0.5rem;
+                gap: 0;
                 padding: 0.5rem 0;
             }
 
@@ -464,15 +471,13 @@
             }
 
             .load-more-button {
-                padding: 11px 22px;
-                font-size: clamp(0.9rem, 2.5vw, 0.95rem);
+                padding: 12px 24px;
+                font-size: 0.9rem;
                 border-radius: 10px;
-                width: 90%;
-                max-width: 280px;
             }
 
             .load-more-container {
-                padding: 1rem;
+                bottom: 1.2rem;
             }
         }
 
@@ -524,10 +529,12 @@
             }
 
             .load-more-button {
-                width: 85%;
-                max-width: 250px;
-                padding: 10px 20px;
+                padding: 12px 24px;
                 font-size: 0.9rem;
+            }
+
+            .load-more-container {
+                bottom: 1rem;
             }
 
         /* Accessibility */
@@ -572,7 +579,7 @@
 
     <!-- Load More Button -->
     <div class="load-more-container">
-        <button id="loadMoreButton" class="load-more-button" onclick="loadMoreImages()">📥 Load More Stories</button>
+        <button id="loadMoreButton" class="load-more-button" onclick="loadMoreImages()">Load More Stories</button>
     </div>
 
     <script>
@@ -613,7 +620,7 @@
                 audioPlaying.currentTime = 0;
                 resetProgress(audioPlaying.dataset.filename);
             }
-            let audioSrc = `static/images/${filename}.mp3`;
+            let audioSrc = `{{ url_for('static', filename='images/') }}${filename}.mp3`;
             audioPlaying = new Audio(audioSrc);
             audioPlaying.dataset.filename = filename;
             audioPlaying.addEventListener('timeupdate', updateProgress);
@@ -660,8 +667,33 @@
             });
         }
 
+        function downloadStory(imageFile, audioFile) {
+            const link = document.createElement('a');
+            link.href = `{{ url_for('static', filename='images/') }}${imageFile}`;
+            link.download = imageFile;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function toggleLike(audioFile) {
+            console.log('Liked:', audioFile);
+        }
+
+        function shareStory(audioFile) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'AI Chronical Story',
+                    text: 'Check out this AI-generated news story!',
+                    url: window.location.href
+                });
+            } else {
+                console.log('Share not available');
+            }
+        }
+
         function loadMoreImages() {
-            loadMoreButton.textContent = '⏳ Loading...';
+            loadMoreButton.textContent = 'Loading...';
             loadMoreButton.disabled = true;
             showFeedNotification('🔄 Fetching fresh stories...', 5000);
             
@@ -677,14 +709,14 @@
                     } else {
                         showFeedNotification('No more fresh stories available.', 2000);
                     }
-                    loadMoreButton.textContent = '📥 Load More Stories';
+                    loadMoreButton.textContent = 'Load More Stories';
                     loadMoreButton.disabled = false;
                     updateLoadMoreButtonVisibility();
                 })
                 .catch(error => {
                     console.error("Error loading more images:", error);
                     showFeedNotification('⚠️ Failed to load more stories.', 2000);
-                    loadMoreButton.textContent = '📥 Load More Stories';
+                    loadMoreButton.textContent = 'Load More Stories';
                     loadMoreButton.disabled = false;
                 });
         }
@@ -730,7 +762,7 @@
                         <div class="floating-controls">
                             <button class="control-btn play-btn" onclick="playAudio('${audioFile}')">▶</button>
                             <button class="control-btn" onclick="toggleLike('${audioFile}')">❤️</button>
-                            <button class="control-btn" onclick="shareStory('${audioFile}')">↗</button>
+                            <button class="control-btn" onclick="downloadStory('${filename}', '${audioFile}')">⬇</button>
                         </div>
                         <div class="reel-text-overlay">
                             <p>${safeText}</p>
