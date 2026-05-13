@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Gallery - AI Chronical</title>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#ff0000">
@@ -18,11 +18,22 @@
 
         html, body {
             width: 100%;
-            height: 100%;
+            min-height: 100%;
             background: #000;
             color: #fff;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             overflow-x: hidden;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        button {
+            min-height: 50px;
+            min-width: 50px;
+            touch-action: manipulation;
         }
 
         /* Header */
@@ -66,13 +77,14 @@
             align-items: center;
             width: 100%;
             min-height: 100vh;
-            padding: 5rem 0 0 0;
+            padding: 5rem 0 calc(env(safe-area-inset-bottom) + 1.5rem) 0;
             margin: 0;
+            padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
         }
 
         /* Reels Container */
         .reelsContainer {
-            height: calc(100vh - 5.5rem);
+            min-height: calc(100vh - 5.5rem);
             width: clamp(280px, 90vw, 450px);
             display: flex;
             flex-direction: column;
@@ -94,7 +106,7 @@
 
         /* Reel Item */
         .reel {
-            height: calc(100vh - 5.5rem);
+            min-height: calc(100vh - 5.5rem);
             width: 100%;
             background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
             scroll-snap-align: start;
@@ -110,10 +122,9 @@
         }
 
         .reel img {
-            max-height: 100%;
             max-width: 100%;
             width: 100%;
-            height: 100%;
+            height: auto;
             object-fit: cover;
             border-radius: 0;
             will-change: transform;
@@ -155,6 +166,8 @@
         }
 
         .control-btn {
+            min-height: 50px;
+            min-width: 50px;
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -270,7 +283,7 @@
         /* Load More Container */
         .load-more-container {
             position: fixed;
-            bottom: 1.5rem;
+            bottom: calc(env(safe-area-inset-bottom) + 1rem);
             left: 50%;
             transform: translateX(-50%);
             z-index: 50;
@@ -359,7 +372,7 @@
             animation: shimmer 2s infinite;
             background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15), rgba(255,255,255,0.05));
             background-size: 1000px 100%;
-            height: 100vh;
+            min-height: 100vh;
             border-radius: 0;
         }
 
@@ -436,7 +449,7 @@
             }
 
             .reelsContainer {
-                height: calc(100vh - 110px);
+                min-height: calc(100vh - 110px);
                 width: 95vw;
                 max-width: 450px;
                 gap: 0;
@@ -498,7 +511,7 @@
 
             .reelsContainer {
                 width: 98vw;
-                height: calc(100vh - 110px);
+                min-height: calc(100vh - 110px);
                 gap: 0.4rem;
             }
 
