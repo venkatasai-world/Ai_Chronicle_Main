@@ -32,8 +32,8 @@
       .home-hero {
         padding: 3rem 1rem 2rem 1rem;
         text-align: center;
-        background: linear-gradient(135deg, rgba(255,0,0,0.05), rgba(255,0,0,0.02));
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+        border-bottom: 1px solid rgba(255,255,255,0.08);
         animation: fadeInUp 0.8s ease-out 0.2s both;
       }
 
@@ -43,20 +43,21 @@
         font-weight: 900;
         letter-spacing: -1px;
         margin: 0;
-        background: linear-gradient(135deg, #ff0000 0%, #ff6666 50%, #ffffff 100%);
+        background: linear-gradient(135deg, #ffffff 0%, #d4d4d4 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-shadow: 0 0 30px rgba(255,0,0,0.2);
-        filter: drop-shadow(0 0 20px rgba(255,0,0,0.1));
+        text-shadow: 0 0 20px rgba(255,255,255,0.12);
       }
 
       .hero-slogan {
-        font-size: clamp(0.95rem, 3vw, 1.3rem);
-        font-weight: 600;
-        color: rgba(255,255,255,0.75);
-        margin: 0.8rem 0 0 0;
-        letter-spacing: 0.8px;
+        font-size: clamp(0.95rem, 3vw, 1.2rem);
+        font-weight: 500;
+        color: rgba(255,255,255,0.72);
+        margin: 0.7rem auto 0 auto;
+        letter-spacing: 0.5px;
+        max-width: 34rem;
+        line-height: 1.6;
         animation: fadeIn 1s ease-out 0.5s both;
       }
 
@@ -341,11 +342,6 @@
         <h1 class="home-title">AI CHRONICAL</h1>
         <p class="home-subtitle">AI-powered news stories with image + voice summaries</p>
       </header>
-
-      <div class="home-hero">
-        <h2 class="hero-title">Summarize. Visualize. Stay Informed.</h2>
-        <p class="hero-slogan">Experience the future of AI-powered news</p>
-      </div>
 
       <div class="carousel-container">
         <div class="carousel-track" id="carouselTrack">

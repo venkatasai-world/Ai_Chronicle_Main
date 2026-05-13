@@ -65,14 +65,14 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: 100vh;
-            padding: 0;
+            min-height: 100vh;
+            padding: 5rem 0 0 0;
             margin: 0;
         }
 
         /* Reels Container */
         .reelsContainer {
-            height: 100vh;
+            height: calc(100vh - 6.5rem);
             width: clamp(280px, 90vw, 450px);
             display: flex;
             flex-direction: column;
@@ -703,10 +703,10 @@
                     let filename, text;
                     if (typeof fileData === 'string') {
                         filename = fileData;
-                        text = 'AI News Summary';
+                        text = 'Story details';
                     } else if (typeof fileData === 'object' && fileData !== null) {
                         filename = fileData.filename || fileData;
-                        text = fileData.text || 'AI News Summary';
+                        text = fileData.text || 'Story details';
                     } else {
                         displayedImageCount++;
                         continue;
@@ -724,7 +724,7 @@
                             <div class="progress-fill" id="progress-${audioFile}"></div>
                         </div>
                         <img src="{{ url_for('static', filename='images/') }}${filename}" 
-                             alt="News Summary" 
+                             alt="Story image" 
                              class="reel-image"
                              loading="lazy">
                         <div class="floating-controls">
@@ -733,7 +733,6 @@
                             <button class="control-btn" onclick="shareStory('${audioFile}')">↗</button>
                         </div>
                         <div class="reel-text-overlay">
-                            <h2>AI News Summary</h2>
                             <p>${safeText}</p>
                         </div>
                     `;
@@ -745,46 +744,11 @@
                 }
             }
             updateLoadMoreButtonVisibility();
-            observeReels(); // Observe new reels
-        }
-
-        // IntersectionObserver for auto play/pause
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const reel = entry.target;
-                const playBtn = reel.querySelector('.play-btn');
-                if (!playBtn) return;
-                const audioFile = playBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-                
-                if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-                    // Auto play when 70% visible
-                    if (!audioPlaying || audioPlaying.dataset.filename !== audioFile) {
-                        playAudio(audioFile);
-                    }
-                } else {
-                    // Pause when not visible
-                    if (audioPlaying && audioPlaying.dataset.filename === audioFile) {
-                        pauseCurrentAudio();
-                    }
-                }
-            });
-        }, {
-            threshold: 0.7,
-            rootMargin: '0px'
-        });
-
-        // Observe all reels
-        function observeReels() {
-            document.querySelectorAll('.reel').forEach(reel => {
-                observer.observe(reel);
-            });
         }
 
         function updateLoadMoreButtonVisibility() {
             console.log('updateLoadMoreButtonVisibility:', {displayedImageCount, totalProcessedCount, length: imageFiles.length});
 
-            // Keep the Load More button visible whenever there is at least one story,
-            // so users can always try to fetch more.
             if (imageFiles && imageFiles.length > 0) {
                 loadMoreButton.style.display = 'block';
             } else {
@@ -792,41 +756,8 @@
             }
         }
 
-        // IntersectionObserver for auto play/pause
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const reel = entry.target;
-                const playBtn = reel.querySelector('.play-btn');
-                if (!playBtn) return;
-                const audioFile = playBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-                
-                if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-                    // Auto play when 70% visible
-                    if (!audioPlaying || audioPlaying.dataset.filename !== audioFile) {
-                        playAudio(audioFile);
-                    }
-                } else {
-                    // Pause when not visible
-                    if (audioPlaying && audioPlaying.dataset.filename === audioFile) {
-                        pauseCurrentAudio();
-                    }
-                }
-            });
-        }, {
-            threshold: 0.7,
-            rootMargin: '0px'
-        });
-
-        // Observe all reels
-        function observeReels() {
-            document.querySelectorAll('.reel').forEach(reel => {
-                observer.observe(reel);
-            });
-        }
-
-        // Initial observe after page load
         window.addEventListener('load', () => {
-            setTimeout(observeReels, 500);
+            loadImagesToGallery(imagesPerLoadInitial);
             setTimeout(() => {
                 showFeedNotification('🎬 Fresh Feed Ready - All duplicates filtered out!', 3000);
             }, 1000);
